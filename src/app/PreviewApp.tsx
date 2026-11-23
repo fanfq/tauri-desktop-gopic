@@ -348,7 +348,7 @@ export default function PreviewApp() {
             <small>Tauri 设计预览 · v0.1.0</small>
             <a
               className="button"
-              href="https://github.com/fanfq/flutter_gopic"
+              href="https://github.com/fanfq/tauri-desktop-gopic"
               target="_blank"
               rel="noreferrer"
             >

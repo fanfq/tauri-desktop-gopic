@@ -34,7 +34,7 @@ export const native = {
   setStartup: (enabled: boolean) =>
     invoke<void>("set_launch_at_login", { enabled }),
   copy: writeText,
-  about: () => openUrl("https://github.com/fanfq/flutter_gopic"),
+  about: () => openUrl("https://github.com/fanfq/tauri-desktop-gopic"),
   async pickFiles() {
     return (
       (await open({
