@@ -19,6 +19,25 @@ npm run tauri -- build --debug --bundles app
 - 配置：主题、命名规则、图片压缩、缓存统计和清理、系统自启动。
 - macOS 托盘：18px 彩色品牌图标，上传/成功/失败反馈；左右键打开菜单，可复制最近上传链接、打开主窗口或退出。拖入文件显示 280×132 原生圆角浮层，上传后自动复制链接。关闭主窗口保留后台托盘，托盘菜单退出才结束进程。
 
+## 桌面打包
+
+在工程根目录运行：
+
+```bash
+./build.sh          # 自动识别当前系统，默认 Release
+./build.sh macos    # 在 macOS 上生成 GoPic.app 和 DMG
+bash build.sh windows  # 在 Windows Git Bash 中生成 NSIS 安装包
+./build.sh macos --debug  # 需要调试包时使用
+```
+
+脚本自动执行 `npm ci`、前端构建、Rust 编译及 Tauri 打包，按 Tauri 配置中的版本号归档。
+产物保存在 `release/macos/` 或 `release/windows/` 下的独立目录，每次打包保留历史产物。
+`dist/` 仍用于 Vite 前端构建，不用于存放发行包。
+
+需要 Node.js/npm 和 Rust。macOS 需要 Xcode 命令行工具；Windows 需要 Visual Studio 的 C++ 桌面开发工具、Windows SDK、MSVC Rust 工具链及 Git Bash。
+两个平台须在对应系统上分别执行。脚本沿用 Tauri 配置及环境变量中的签名、公证设置；正式签名需要自行配置相应凭据。
+查看完整用法：`bash build.sh --help`。
+
 ## 代码结构
 
 `src/domain` 定义共享模型与串行快照更新；`src/services/native.ts` 封装 IPC；`src/hooks/useNativeApp.ts` 管理桌面状态。`src/app/NativeApp.tsx` 与 `PreviewApp.tsx` 分别承载真实运行和预览。
