@@ -25,17 +25,33 @@ npm run tauri -- build --debug --bundles app
 
 ```bash
 ./build.sh          # 自动识别当前系统，默认 Release
-./build.sh macos    # 在 macOS 上生成 GoPic.app 和 DMG
-bash build.sh windows  # 在 Windows Git Bash 中生成 NSIS 安装包
+./build.sh macos    # 当前 Mac 架构的 GoPic.app 和 DMG
+./build.sh macos-arm    # Apple Silicon / ARM64
+./build.sh macos-intel  # Apple Intel / x86_64
+./build.sh windows64    # Windows x64 NSIS 安装包（也可在 macOS 上交叉编译）
+./build.sh all          # macOS 上依次生成 Apple ARM、Intel、Windows x64 三份包
+bash build.sh windows  # Windows Git Bash 下保留当前架构打包；macOS 下等同 windows64
 ./build.sh macos --debug  # 需要调试包时使用
 ```
 
 脚本自动执行 `npm ci`、前端构建、Rust 编译及 Tauri 打包，按 Tauri 配置中的版本号归档。
-产物保存在 `release/macos/` 或 `release/windows/` 下的独立目录，每次打包保留历史产物。
+产物保存在 `release/<版本>/<系统>-<架构>/`，例如 `release/0.1.0/darwin-aarch64/`，Windows x64 为 `release/0.1.0/windows-x86_64/`。
+同版本重复打包时，上一份产物移入旁边的 `.previous.*` 目录；调试包使用 `<系统>-<架构>-debug/`，与 Release 分开。
 `dist/` 仍用于 Vite 前端构建，不用于存放发行包。
 
 需要 Node.js/npm 和 Rust。macOS 需要 Xcode 命令行工具；Windows 需要 Visual Studio 的 C++ 桌面开发工具、Windows SDK、MSVC Rust 工具链及 Git Bash。
-两个平台须在对应系统上分别执行。脚本沿用 Tauri 配置及环境变量中的签名、公证设置；正式签名需要自行配置相应凭据。
+`all` 需要在 macOS 上运行；Apple 两个架构分别生成独立的 App 和 DMG，Windows 生成 `*-setup.exe`。归档目录分别为 `darwin-aarch64/`、`darwin-x86_64/`、`windows-x86_64/`。任一目标失败即停止，已完成的目标保留。
+
+macOS 交叉打包 Windows 按 [Tauri 官方方案](https://v2.tauri.app/distribute/windows-installer/#build-windows-apps-on-linux-and-macos) 使用 cargo-xwin、LLVM、LLD 和 NSIS。首次使用先安装：
+
+```bash
+brew install llvm lld nsis
+cargo install --locked cargo-xwin
+```
+
+脚本在缺少 LLVM 命令时自动查找 Homebrew LLVM 路径；也可自行将 LLVM 的 `bin` 加入 `PATH`。缺少的 Rust 目标标准库会自动通过 `rustup target add` 安装，首次 Windows 交叉编译还会下载 Windows SDK，需要网络。SDK 默认缓存于 `src-tauri/target/xwin/`，可用 `XWIN_CACHE_DIR` 指定共享缓存。
+
+脚本只运行一次 `npm ci`，三个目标串行构建。沿用 Tauri 配置及环境变量中的签名、公证设置；正式签名需要自行配置相应凭据，交叉编译 Windows 签名需使用外部签名工具。Windows 安装与运行仍需在 Windows 实机验收。
 查看完整用法：`bash build.sh --help`。
 
 ## 代码结构
