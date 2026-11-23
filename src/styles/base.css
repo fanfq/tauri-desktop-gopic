@@ -1,0 +1,135 @@
+/* 基础排版与主题变量；关闭 Preflight 后显式维持桌面原有字体与表单行为。 */
+@layer base {
+  :root {
+    @apply [font-family:-apple-system,_BlinkMacSystemFont,_"SF_Pro_Text",_"PingFang_SC",_"Microsoft_YaHei",_sans-serif] [font-synthesis:none] [text-rendering:optimizeLegibility] [-webkit-font-smoothing:antialiased] text-[#283244] bg-[#f8f9fb] text-[13px];
+  }
+  * {
+    /* 关闭 Preflight 后仍需零边框基线，避免 border-r/border-t 激活其他边的默认 medium 宽度。 */
+    @apply box-border border-0 [border-color:currentColor];
+  }
+  body {
+    @apply m-0;
+  }
+  button,
+  input,
+  select {
+    @apply [font:inherit];
+  }
+  button,
+  a,
+  input,
+  select {
+    @apply [-webkit-tap-highlight-color:transparent];
+  }
+  button,
+  a {
+    @apply touch-manipulation;
+  }
+  button {
+    @apply cursor-pointer;
+  }
+  button:disabled {
+    @apply cursor-not-allowed opacity-[0.45];
+  }
+  a {
+    @apply text-inherit no-underline;
+  }
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible {
+    @apply [outline:3px_solid_#8ab4fa] outline-offset-[3px];
+  }
+  button {
+    @apply text-inherit;
+  }
+  button svg,
+  a svg {
+    @apply shrink-0;
+  }
+  input,
+  select {
+    @apply text-inherit;
+  }
+  button {
+    @apply border-0;
+  }
+  h1,
+  h2,
+  p {
+    @apply m-0;
+  }
+  h1 {
+    @apply text-[21px] font-[650] tracking-[-0.5px];
+  }
+  h2 {
+    @apply text-[14px] font-semibold;
+  }
+  small {
+    @apply text-[11px];
+  }
+  strong {
+    @apply font-[550];
+  }
+  .app {
+    --bg: #f8f9fb;
+    --panel: #fff;
+    --sidebar: #eff1f5;
+    --text: #283244;
+    --muted: #87909e;
+    --line: #e4e7ed;
+    --primary: #4576d6;
+    --tint: #e8eefb;
+    --soft: #f3f5f8;
+    --error: #ca5055;
+  }
+  .app.theme-dark {
+    --bg: #1b1e24;
+    --panel: #242830;
+    --sidebar: #20232a;
+    --text: #e4e8f0;
+    --muted: #9199a8;
+    --line: #363c47;
+    --primary: #8eafff;
+    --tint: #2b3a55;
+    --soft: #2b303a;
+    --error: #f28c91;
+  }
+  @media (prefers-color-scheme: dark) {
+    .app.theme-system {
+      --bg: #1b1e24;
+      --panel: #242830;
+      --sidebar: #20232a;
+      --text: #e4e8f0;
+      --muted: #9199a8;
+      --line: #363c47;
+      --primary: #8eafff;
+      --tint: #2b3a55;
+      --soft: #2b303a;
+      --error: #f28c91;
+    }
+  }
+  nav {
+    @apply grid gap-[5px];
+  }
+  input,
+  select {
+    @apply border border-solid border-line rounded-[6px] bg-surface py-2 px-2.5 min-w-0 text-[12px];
+  }
+  input::placeholder {
+    @apply text-muted;
+  }
+  input:disabled {
+    @apply bg-soft text-muted;
+  }
+  hr {
+    @apply h-px border-0 bg-line my-1 mx-0;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      @apply ![transition:none] ![scroll-behavior:auto];
+    }
+  }
+}

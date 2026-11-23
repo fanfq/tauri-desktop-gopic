@@ -1,0 +1,74 @@
+/* 画布独立裁切，标题与操作栏始终可见，不依赖 transform 产生滚动范围。 */
+@layer components {
+  .modal.image-preview[open] {
+    /* 覆盖页面内容对子元素的 1180px 上限，dialog 位于页面容器内。 */
+    width: min(920px, calc(100vw - 40px));
+    max-width: calc(100vw - 40px);
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    height: min(760px, calc(100dvh - 48px));
+    overflow: hidden;
+  }
+  .image-preview > header h2 {
+    min-width: 0;
+  }
+  .image-preview > header > button {
+    flex-shrink: 0;
+  }
+  .image-preview-stage {
+    @apply relative bg-soft;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .image-preview-viewport {
+    position: absolute;
+    inset: 16px;
+    overflow: hidden;
+    touch-action: none;
+    user-select: none;
+  }
+  .image-preview-viewport.pannable {
+    cursor: grab;
+  }
+  .image-preview-viewport.dragging {
+    cursor: grabbing;
+  }
+  .image-preview-image {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    max-width: none;
+    max-height: none;
+    transform-origin: center;
+  }
+  .image-preview-state {
+    @apply text-muted;
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    font-size: 12px;
+  }
+  .image-preview .preview-footer {
+    flex-wrap: wrap;
+  }
+  .image-preview-meta {
+    overflow-wrap: anywhere;
+  }
+  .image-preview-tools {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-left: auto;
+  }
+  .image-preview-scale {
+    min-width: 50px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+}

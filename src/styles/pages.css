@@ -1,0 +1,294 @@
+/* 页面子元素与关联状态；独立布局和响应式工具类位于各 JSX 组件。 */
+@layer components {
+  .app.theme-dark {
+    @apply [color-scheme:dark];
+  }
+  @media (prefers-color-scheme: dark) {
+    .app.theme-system {
+      @apply [color-scheme:dark];
+    }
+  }
+  .brand img {
+    @apply w-[37px] h-[37px] object-contain rounded-[9px];
+  }
+  .brand > span {
+    @apply text-[20px] font-bold tracking-[-0.6px];
+  }
+  .brand small {
+    @apply block font-normal tracking-[0.3px] text-[10px] mt-1 text-muted;
+  }
+  .sidebar-footer small {
+    @apply ml-[5px];
+  }
+  .page-header p {
+    @apply text-muted text-[11px] mt-1.5;
+  }
+  .page-content > * {
+    @apply max-w-[1180px] ml-auto mr-auto;
+  }
+  .compression strong {
+    @apply text-[12px];
+  }
+  .compression small {
+    @apply block text-muted text-[10px] mt-[5px];
+  }
+  .compression-inputs label {
+    @apply flex gap-2 items-center text-[11px] text-muted;
+  }
+  .unit-input input {
+    @apply w-12 border-0 rounded-none p-[7px_3px_7px_9px] text-[11px] [appearance:textfield];
+  }
+  .unit-input > span {
+    @apply text-[10px] p-[0_7px] bg-surface self-stretch flex items-center;
+  }
+  .section-heading > .muted {
+    @apply text-[10px];
+  }
+  .task + .task {
+    @apply border-t border-solid border-t-line;
+  }
+  .file-icon {
+    @apply w-[38px] h-[42px] grid place-items-center rounded-[6px] bg-soft text-muted shrink-0;
+  }
+  .file-icon.done {
+    @apply text-accent bg-tint;
+  }
+  .task-info strong {
+    @apply text-[12px] block overflow-hidden text-ellipsis whitespace-nowrap;
+  }
+  .task-info small {
+    @apply block mt-[7px] text-muted text-[10px] overflow-hidden text-ellipsis whitespace-nowrap;
+  }
+  .task-status {
+    @apply flex gap-[5px] items-center text-[10px] shrink-0 text-accent;
+  }
+  .task-status.done {
+    @apply text-[#5e9d80];
+  }
+  .task-status.queued {
+    @apply text-muted;
+  }
+  .task-status.error {
+    @apply text-danger;
+  }
+  .task-status > span {
+    @apply ml-2 text-muted;
+  }
+  .progress span {
+    @apply block h-full bg-accent rounded-[3px] [transition:width_0.2s];
+  }
+  .image-card {
+    @apply relative bg-surface border border-solid border-line rounded-[8px] min-w-0;
+  }
+  .image-card:hover {
+    @apply border-[#b8c8e6] shadow-[0_3px_12px_#2033540a];
+  }
+  .image-card.selected {
+    @apply border-accent shadow-[0_0_0_1px_var(--primary)];
+  }
+  .image-open img {
+    @apply w-full h-full object-cover block [transition:transform_0.25s];
+  }
+  .image-open:hover img {
+    @apply [transform:scale(1.04)];
+  }
+  .selected .select-image {
+    @apply text-brand;
+  }
+  .image-meta > strong {
+    @apply block text-[12px] whitespace-nowrap overflow-hidden text-ellipsis;
+  }
+  .image-meta > small {
+    @apply flex gap-[7px] text-muted mt-[7px] text-[10px];
+  }
+  .batch-bar > span {
+    @apply flex items-center gap-[7px];
+  }
+  .empty-state h2 {
+    @apply text-[17px] text-ink;
+  }
+  .empty-state p {
+    @apply text-[12px] text-center leading-[1.8];
+  }
+  .profile-list > .section-heading {
+    @apply p-[0_5px_10px];
+  }
+  .profile-list h2 {
+    @apply text-[12px];
+  }
+  .profile-item {
+    @apply flex items-center rounded-[6px] mb-1 min-w-0;
+  }
+  .profile-item.selected {
+    @apply bg-tint;
+  }
+  .profile-select > svg {
+    @apply text-muted mt-px;
+  }
+  .selected .profile-select > svg {
+    @apply text-accent;
+  }
+  .profile-select > span {
+    @apply min-w-0;
+  }
+  .profile-select strong {
+    @apply block text-[12px] overflow-hidden text-ellipsis whitespace-nowrap;
+  }
+  .profile-select small {
+    @apply flex items-center gap-[5px] text-[10px] mt-[7px] text-muted;
+  }
+  .status-dot {
+    @apply w-[5px] h-[5px] inline-block bg-[#b7bfca] rounded-full shrink-0;
+  }
+  .status-dot.green {
+    @apply bg-[#5aab84];
+  }
+  .add-profile:hover {
+    @apply text-accent;
+  }
+  .editor-heading h2 {
+    @apply text-[15px] [overflow-wrap:anywhere];
+  }
+  .editor-heading p {
+    @apply text-muted text-[10px] mt-1.5;
+  }
+  .editor-heading .muted {
+    @apply text-[11px];
+  }
+  .password-input input {
+    @apply w-full pr-[39px];
+  }
+  .editor-footer > span {
+    @apply flex items-center gap-[5px] text-[10px] text-muted;
+  }
+  .settings-layout > section + section {
+    @apply mt-[27px];
+  }
+  .settings-section-title svg {
+    @apply text-muted;
+  }
+  .naming-example > span {
+    @apply text-muted shrink-0;
+  }
+  .naming-example code {
+    @apply text-accent [overflow-wrap:anywhere];
+  }
+  .cache-stats strong {
+    @apply text-[27px] font-[550] tracking-[-1px];
+  }
+  .cache-stats strong > span {
+    @apply text-[12px] text-muted tracking-[0];
+  }
+  .cache-stats p {
+    @apply text-muted text-[10px] mt-1.5;
+  }
+  .cache-path > span {
+    @apply flex-1 [overflow-wrap:anywhere];
+  }
+  .cache-path svg {
+    @apply shrink-0;
+  }
+  .transfer-panel small {
+    @apply block mt-1.5 text-[10px];
+  }
+  .toast > svg {
+    @apply text-accent shrink-0;
+  }
+  .file-choice input {
+    @apply block mt-3 max-w-full;
+  }
+  .about-content img {
+    @apply w-[72px] h-[72px];
+  }
+  .about-content h2 {
+    @apply text-[25px];
+  }
+  .about-content p,
+  .about-content small {
+    @apply text-muted;
+  }
+  .about-content a {
+    @apply mt-2.5;
+  }
+  @screen compact {
+    .editor-footer > span {
+      @apply max-w-[140px] leading-[1.7];
+    }
+  }
+  @screen narrow {
+    .page-header p {
+      @apply max-w-[200px] whitespace-nowrap text-ellipsis overflow-hidden;
+    }
+    .page-header h1 {
+      @apply text-[19px];
+    }
+    .editor-footer > span {
+      @apply max-w-none;
+    }
+    .profile-select strong {
+      @apply text-[11px];
+    }
+    .profile-select > svg {
+      @apply hidden;
+    }
+    .task-status.uploading {
+      @apply text-[9px];
+    }
+    .task-status.uploading > svg {
+      @apply hidden;
+    }
+  }
+  @screen small-window {
+    .brand > span {
+      @apply text-[18px];
+    }
+    .brand small {
+      @apply hidden;
+    }
+    .brand img {
+      @apply w-[30px] h-[30px];
+    }
+    .page-header p {
+      @apply hidden;
+    }
+    .profile-list > .section-heading {
+      @apply w-full pb-0;
+    }
+    .profile-item {
+      @apply max-w-[175px] m-0;
+    }
+    .profile-select > svg {
+      @apply block;
+    }
+    .compression-inputs label {
+      @apply gap-[5px] text-[10px];
+    }
+    .task-status {
+      @apply max-w-[70px] flex-wrap justify-end;
+    }
+    .task .file-icon {
+      @apply grid w-[34px] h-[38px];
+    }
+    .gallery-toolbar > .ui-inline {
+      @apply gap-[5px];
+    }
+    .sidebar-footer span {
+      @apply text-[10px];
+    }
+    .sidebar-footer small {
+      @apply text-[9px];
+    }
+  }
+  .file-cover span {
+    @apply text-[11px] text-muted;
+  }
+  .cloud-fieldset {
+    @apply border-0 p-0 min-w-0;
+  }
+  .native-loading p {
+    @apply my-3 mx-0 leading-[1.8] [overflow-wrap:anywhere];
+  }
+  .settings-fieldset {
+    @apply border-0 p-0 min-w-0;
+  }
+}

@@ -1,0 +1,79 @@
+/* 下拉框共用主题变量；portal 仍位于 .app 内，不受页面 overflow 裁切。 */
+@layer components {
+  .ui-select {
+    @apply min-w-0 inline-block text-[12px];
+  }
+  .select-trigger {
+    @apply flex items-center gap-2 w-full min-h-[34px] px-2.5 py-2 text-left text-ink bg-surface border border-solid border-line rounded-[6px] [transition:background_0.15s,_border-color_0.15s];
+  }
+  .select-trigger:hover:not(:disabled) {
+    @apply bg-soft;
+  }
+  .select-trigger[aria-expanded="true"] {
+    @apply border-accent bg-tint;
+  }
+  .select-trigger:disabled {
+    @apply bg-soft text-muted opacity-100;
+  }
+  .select-copy {
+    @apply flex-1 min-w-0;
+  }
+  .select-value {
+    @apply block overflow-hidden text-ellipsis whitespace-nowrap;
+  }
+  .select-value.is-placeholder,
+  .select-icon,
+  .select-caret {
+    @apply text-muted;
+  }
+  .select-icon {
+    @apply flex shrink-0;
+  }
+  .select-caret {
+    @apply shrink-0 [transition:transform_0.15s];
+  }
+  .select-trigger[aria-expanded="true"] .select-caret {
+    @apply rotate-180 text-accent;
+  }
+  .ui-select-cloud {
+    @apply min-w-[215px] max-w-[300px] narrow:min-w-[175px] narrow:max-w-[205px] small-window:min-w-[140px] small-window:max-w-[155px];
+  }
+  .ui-select-cloud .select-trigger {
+    @apply gap-2.5 px-3 py-[7px] rounded-[7px];
+  }
+  .select-caption {
+    @apply block text-muted text-[9px] mb-0.5;
+  }
+  .ui-select-cloud .select-value {
+    @apply font-[550] narrow:text-[11px];
+  }
+  .ui-select-compact {
+    @apply text-[11px];
+  }
+  .ui-select-compact .select-trigger {
+    @apply min-h-[31px] py-1.5;
+  }
+  .select-menu {
+    @apply fixed z-[100] overflow-y-auto overscroll-contain p-[5px] border border-solid border-line rounded-[8px] bg-surface text-ink text-[12px] shadow-[0_8px_30px_#0002];
+  }
+  .select-option {
+    @apply flex items-center justify-between gap-3 min-h-[33px] px-2.5 py-2 rounded-[5px] cursor-pointer;
+  }
+  .select-option > span {
+    @apply min-w-0 overflow-hidden text-ellipsis whitespace-nowrap;
+  }
+  .select-option > svg {
+    @apply shrink-0 text-accent;
+  }
+  .select-option[aria-selected="true"] {
+    @apply text-accent font-medium;
+  }
+  .select-option.is-active {
+    @apply bg-tint;
+  }
+  @screen small-window {
+    .ui-select-cloud .select-icon {
+      @apply hidden;
+    }
+  }
+}

@@ -1,0 +1,59 @@
+/* 浏览器预览专用控件与托盘示意，和真实桌面业务隔离。 */
+@layer components {
+  .preview-strip > span,
+  .preview-strip button {
+    @apply flex items-center gap-1.5;
+  }
+  .preview-strip button {
+    @apply bg-transparent text-muted text-[10px] p-0;
+  }
+  .preview-strip .status-dot {
+    @apply bg-accent w-[5px] h-[5px];
+  }
+  .menu-dismiss,
+  .panel-dismiss {
+    @apply fixed inset-0 bg-transparent z-[30] cursor-default;
+  }
+  .dropdown button,
+  .tray-menu button {
+    @apply flex items-center gap-2 text-left w-full p-[9px_10px] bg-transparent text-[12px] rounded-[4px];
+  }
+  .dropdown button:hover,
+  .tray-menu button:hover {
+    @apply bg-soft;
+  }
+  .preview-controls p,
+  .preview-controls small {
+    @apply text-[11px] text-muted leading-[1.8] m-[9px_0] block;
+  }
+  .preview-controls label {
+    @apply block text-[11px] m-[17px_0];
+  }
+  .preview-controls label .ui-select {
+    @apply block w-full mt-2;
+  }
+  .preview-controls .full-width {
+    @apply mt-[15px];
+  }
+  .tray-menubar small {
+    @apply ml-auto text-muted text-[10px];
+  }
+  .tray-drop {
+    @apply flex flex-col items-center gap-2.5 m-3 p-[25px_10px] text-accent bg-surface border border-dashed border-line rounded-[7px] text-[12px];
+  }
+  .tray-drop.dragging {
+    @apply bg-tint border-accent;
+  }
+  .tray-drop.success {
+    @apply text-[#5e9d80];
+  }
+  .tray-drop.error {
+    @apply text-danger;
+  }
+  .tray-states button {
+    @apply p-[5px_9px] text-[11px] bg-soft rounded-[5px];
+  }
+  .tray-states button.selected {
+    @apply bg-tint text-accent;
+  }
+}

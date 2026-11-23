@@ -1,0 +1,233 @@
+/* 重复控件的 Tailwind 组合；仅保留跨页面复用或依赖状态选择器的组件样式。 */
+@layer components {
+  .nav-item {
+    @apply w-full flex items-center gap-[11px] p-[11px_13px] text-left bg-transparent rounded-[7px] text-[#6e7889];
+  }
+  .nav-item > span {
+    @apply flex-1;
+  }
+  .nav-item:hover,
+  .subnav button:hover {
+    @apply bg-line;
+  }
+  .nav-item.active {
+    @apply bg-tint text-accent font-semibold;
+  }
+  .subnav button {
+    @apply flex gap-[9px] items-center text-left p-[9px_7px] bg-transparent text-muted rounded-[5px] text-[12px];
+  }
+  .subnav button.active {
+    @apply text-accent bg-tint font-[550];
+  }
+  .theme-control {
+    @apply flex bg-line rounded-[7px] p-[3px] w-auto m-0 gap-[3px] flex-wrap;
+  }
+  .theme-control button {
+    @apply bg-transparent rounded-[5px] flex items-center justify-center gap-1.5 py-1.5 px-2.5 min-h-[30px] text-muted;
+  }
+  .theme-control button.selected {
+    @apply bg-surface text-ink shadow-[0_1px_3px_#00000012];
+  }
+  .panel {
+    @apply bg-surface border border-solid border-line rounded-[9px];
+  }
+  .button {
+    @apply inline-flex items-center justify-center gap-[7px] min-h-[33px] p-[7px_12px] whitespace-nowrap bg-surface border border-solid border-line rounded-[6px] text-[12px] font-medium;
+  }
+  .button:hover {
+    @apply bg-soft;
+  }
+  .button.primary {
+    @apply text-white bg-brand border-brand;
+  }
+  .button.primary:hover {
+    @apply bg-brand-hover;
+  }
+  .button.danger {
+    @apply bg-[#c75258] text-white border-[#c75258];
+  }
+  .icon-button {
+    @apply inline-flex items-center justify-center shrink-0 w-[31px] h-[31px] rounded-[5px] bg-transparent text-muted;
+  }
+  .icon-button:hover,
+  .icon-button.pressed {
+    @apply bg-soft text-ink;
+  }
+  .text-button {
+    @apply inline-flex gap-1.5 items-center bg-transparent text-accent p-1 text-[12px];
+  }
+  .text-button:hover {
+    @apply underline;
+  }
+  .toggle {
+    @apply w-[34px] h-5 rounded-[12px] bg-[#c6cdd6] inline-flex items-center shrink-0 p-0.5 [transition:background_0.15s];
+  }
+  .toggle span {
+    @apply w-4 h-4 rounded-full bg-white shadow-[0_1px_3px_#0002] [transition:transform_0.15s];
+  }
+  .toggle.on {
+    @apply bg-brand;
+  }
+  .toggle.on span {
+    @apply [transform:translateX(14px)];
+  }
+  .notice {
+    @apply flex gap-2.5 items-center py-3 px-3.5 bg-tint text-accent text-[12px] rounded-[7px] leading-[1.7] mb-[18px];
+  }
+  .notice > svg {
+    @apply shrink-0;
+  }
+  .notice.error {
+    @apply bg-[color-mix(in_srgb,_var(--error)_9%,_var(--panel))] text-danger;
+  }
+  .unit-input input::-webkit-inner-spin-button {
+    @apply appearance-none;
+  }
+  .dropzone {
+    @apply flex items-center justify-center flex-col w-full h-[310px] mt-[18px] bg-surface border border-dashed border-[#cbd3e0] rounded-[9px] [transition:border-color_0.15s,_background_0.15s];
+  }
+  .dropzone:hover,
+  .dropzone.dragging {
+    @apply bg-tint border-accent;
+  }
+  .dropzone h2 {
+    @apply text-[18px] tracking-[0.2px] font-[550];
+  }
+  .dropzone p {
+    @apply text-[12px] text-muted m-[10px_0_19px];
+  }
+  .dropzone small {
+    @apply text-[10px] text-muted mt-[17px];
+  }
+  .batch-bar .text-button {
+    @apply text-[11px];
+  }
+  .profile-item > .icon-button {
+    @apply w-[26px] mr-0.5;
+  }
+  .form-row {
+    @apply grid grid-cols-[125px_minmax(0,_1fr)] gap-[13px] items-center text-[11px];
+  }
+  .form-row > span {
+    @apply text-muted flex items-center justify-end gap-[5px] text-right;
+  }
+  .form-row > span small {
+    @apply text-[9px] text-[#aab1bc];
+  }
+  .form-row > input {
+    @apply w-full;
+  }
+  .password-input button {
+    @apply absolute right-[3px] top-0.5 h-[29px];
+  }
+  .cloud-editor > .notice {
+    @apply mt-[15px] text-[11px];
+  }
+  .settings-row {
+    @apply flex items-center justify-between gap-5 p-5;
+  }
+  .settings-row strong {
+    @apply text-[12px];
+  }
+  .settings-row p {
+    @apply text-[11px] text-muted mt-[7px] leading-[1.6];
+  }
+  .settings-row > .ui-select {
+    @apply max-w-[270px] w-[43%] text-[11px];
+  }
+  .settings-row.no-padding {
+    @apply p-0;
+  }
+  .transfer-panel .settings-row + .settings-row {
+    @apply border-t border-solid border-t-line;
+  }
+  .toast button {
+    @apply bg-transparent grid place-items-center text-muted ml-[9px] p-[3px];
+  }
+  .modal {
+    @apply p-0 border border-solid border-line rounded-[12px] bg-surface text-ink w-[470px] max-w-[calc(100vw_-_40px)] max-h-[calc(100dvh_-_48px)] shadow-[0_15px_60px_#0004];
+  }
+  .modal::backdrop {
+    @apply bg-[#14203366] [backdrop-filter:blur(3px)];
+  }
+  .modal > header {
+    @apply flex items-center justify-between p-[14px_18px] border-b border-solid border-b-line gap-2.5;
+  }
+  .modal h2 {
+    @apply text-[14px] overflow-hidden text-ellipsis whitespace-nowrap;
+  }
+  .modal-body > p {
+    @apply mb-[13px] text-[12px];
+  }
+  .modal footer {
+    @apply flex items-center justify-end gap-[9px] p-[14px_18px] border-t border-solid border-t-line;
+  }
+  .modal.wide {
+    @apply w-[920px];
+  }
+  .modal .preview-footer {
+    @apply justify-between text-[10px] text-muted;
+  }
+  @screen wide {
+    .dropzone {
+      @apply h-[350px];
+    }
+  }
+  @screen compact {
+    .form-row {
+      @apply grid-cols-[108px_minmax(0,_1fr)] gap-2.5;
+    }
+  }
+  @screen narrow {
+    .form-row {
+      @apply grid-cols-[1fr] gap-1.5;
+    }
+    .form-row > span {
+      @apply justify-start text-left;
+    }
+    .settings-row {
+      @apply p-[17px] gap-3;
+    }
+    .settings-row p {
+      @apply text-[10px];
+    }
+    .settings-row > .ui-select {
+      @apply w-[49%];
+    }
+  }
+  @screen small-window {
+    .nav-item {
+      @apply p-[11px_9px];
+    }
+    .subnav button {
+      @apply text-[10px];
+    }
+    .dropzone {
+      @apply h-[290px];
+    }
+    .dropzone h2 {
+      @apply text-[17px];
+    }
+    .dropzone p {
+      @apply text-[11px];
+    }
+    .dropzone small {
+      @apply text-[9px];
+    }
+    .settings-row {
+      @apply flex-wrap;
+    }
+    .settings-row > .ui-select {
+      @apply w-full max-w-none;
+    }
+    .settings-row .toggle {
+      @apply ml-auto;
+    }
+    .modal .preview-footer {
+      @apply flex-wrap justify-center;
+    }
+  }
+  .native-loading .panel {
+    @apply max-w-[600px] p-6;
+  }
+}
