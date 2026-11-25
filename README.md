@@ -54,6 +54,34 @@ cargo install --locked cargo-xwin
 脚本只运行一次 `npm ci`，三个目标串行构建。沿用 Tauri 配置及环境变量中的签名、公证设置；正式签名需要自行配置相应凭据，交叉编译 Windows 签名需使用外部签名工具。Windows 安装与运行仍需在 Windows 实机验收。
 查看完整用法：`bash build.sh --help`。
 
+## GitHub Actions 打包与发布
+
+工作流位于 [`.github/workflows/build.yml`](.github/workflows/build.yml)，复用现有 `build.sh`，分别生成 macOS Apple Silicon、macOS Intel 的 DMG 和 Windows x64 的 NSIS EXE。使用 Node.js 24、Rust stable，安装依赖时沿用 npm/Cargo 锁文件，并缓存 npm 和 Rust 构建数据。
+
+### 手动打包
+
+将工作流提交并推送到 GitHub 默认分支后，进入仓库 **Actions → Build desktop installers → Run workflow**，选择要构建的分支并运行。
+三个平台全部构建；完成后在本次运行页面的 **Artifacts** 下载对应平台的 ZIP，解压即可得到安装包。Artifacts 保留 30 天。手动运行只构建和上传产物，即使选择标签也不会创建 Release；普通分支 push 不触发打包。
+
+### 标签发布
+
+1. 修改 `src-tauri/tauri.conf.json` 的 `version`，例如 `1.0.3`。安装包版本以此文件为准，`package.json` 和 `Cargo.toml` 的版本不会覆盖它。
+2. 自行提交并推送源代码后，在对应提交创建并推送同名版本标签：
+
+   ```bash
+   git tag v1.0.3
+   git push origin v1.0.3
+   ```
+
+3. 工作流先检查标签是否严格等于 `v<version>`，并运行 `npm test`；检查失败不会开始桌面构建。
+4. 三个平台都成功后，自动创建 **GoPic v1.0.3** Release 草稿，附上两个 DMG 和一个 EXE。进入仓库 **Releases** 检查安装包、填写更新说明并手动发布。含 `-beta.1` 等后缀的版本会标记为预发布。
+
+重跑同一个标签会复用已有草稿并替换同名附件；如果该版本已经正式发布，工作流会拒绝覆盖附件。某个平台失败时，其他平台继续构建并上传成功的产物，但不会创建 Release 草稿。
+
+无需额外配置个人访问令牌或 Secrets，工作流使用 GitHub 自动提供的 `GITHUB_TOKEN`。只有 Release 任务申请 `contents: write`；若仓库或组织策略禁用了 Actions 或限制写权限，需要在相应 Settings 中允许此工作流及创建 Release。
+
+当前工作流未配置开发者证书签名、Apple 公证或自动更新。安装时可能遇到 macOS Gatekeeper / Windows SmartScreen 提示；正式签名需另行接入证书和凭据。GitHub runner 上编译成功不代表已完成各平台实机安装与运行验收。
+
 ## 代码结构
 
 `src/domain` 定义共享模型与串行快照更新；`src/services/native.ts` 封装 IPC；`src/hooks/useNativeApp.ts` 管理桌面状态。`src/app/NativeApp.tsx` 与 `PreviewApp.tsx` 分别承载真实运行和预览。

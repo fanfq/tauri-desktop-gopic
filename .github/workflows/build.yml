@@ -1,0 +1,168 @@
+name: Build desktop installers
+
+on:
+  # 手动构建只保留 artifacts；版本标签构建额外生成 Release 草稿。
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+# 打包无需写仓库；写权限仅授予最后的草稿任务。
+permissions:
+  contents: read
+
+# 同一标签的重跑串行执行，避免同时写入同一个 Release。
+concurrency:
+  group: desktop-build-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Validate version and tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      version: ${{ steps.metadata.outputs.version }}
+      release: ${{ steps.metadata.outputs.release }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+      - name: Validate Tauri version and release tag
+        id: metadata
+        run: node .github/scripts/build-metadata.mjs
+      - run: npm ci --no-audit --no-fund
+      - run: npm test
+
+  build:
+    name: Build ${{ matrix.platform }}
+    needs: prepare
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      # 某个平台失败时，其余平台仍继续，方便下载成功的产物并排查问题。
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            target: aarch64-apple-darwin
+            platform: darwin-aarch64
+            mode: macos-arm
+            installer: "*.dmg"
+          - os: macos-15
+            target: x86_64-apple-darwin
+            platform: darwin-x86_64
+            mode: macos-intel
+            installer: "*.dmg"
+          - os: windows-2022
+            target: x86_64-pc-windows-msvc
+            platform: windows-x86_64
+            mode: windows64
+            installer: "*-setup.exe"
+    defaults:
+      run:
+        # Windows 使用 Git Bash，复用 build.sh 的 MSVC 原生构建分支。
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+          key: ${{ matrix.target }}
+      - name: Build release installer
+        env:
+          BUILD_MODE: ${{ matrix.mode }}
+        # build.sh 负责 npm ci、前端构建、--locked 编译及版本目录归档。
+        run: bash build.sh "$BUILD_MODE"
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: GoPic-${{ needs.prepare.outputs.version }}-${{ matrix.platform }}
+          path: release/${{ needs.prepare.outputs.version }}/${{ matrix.platform }}/${{ matrix.installer }}
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+
+  release:
+    name: Create draft release
+    needs: [prepare, build]
+    if: needs.prepare.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: GoPic-${{ needs.prepare.outputs.version }}-*
+          path: installers
+          merge-multiple: true
+      - name: Check complete installer set
+        shell: bash
+        run: |
+          # 在创建草稿前确认两个架构的 DMG 和 Windows 安装包均已收齐。
+          shopt -s nullglob
+          arm=(installers/*_aarch64.dmg)
+          intel=(installers/*_x64.dmg)
+          windows=(installers/*_x64-setup.exe)
+          [[ ${#arm[@]} == 1 && ${#intel[@]} == 1 && ${#windows[@]} == 1 ]]
+          for installer in "${arm[@]}" "${intel[@]}" "${windows[@]}"; do
+            [[ -s "$installer" ]]
+          done
+      - name: Create or reuse draft
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const tag = process.env.RELEASE_TAG;
+            let release;
+            try {
+              ({ data: release } = await github.rest.repos.getReleaseByTag({
+                owner, repo, tag,
+              }));
+            } catch (error) {
+              // 只有明确不存在时才创建；权限或网络错误应直接报告失败。
+              if (error.status !== 404) throw error;
+            }
+            if (release) {
+              if (!release.draft) {
+                throw new Error(`${tag} 已发布，拒绝覆盖其安装包。`);
+              }
+              core.info(`复用草稿 ${release.html_url}`);
+            } else {
+              await github.rest.repos.createRelease({
+                owner, repo,
+                tag_name: tag,
+                name: `GoPic ${tag}`,
+                draft: true,
+                prerelease: tag.includes('-'),
+                body: [
+                  '安装包：macOS Apple Silicon、macOS Intel、Windows x64。',
+                  '',
+                  '此构建未配置开发者证书签名与 Apple 公证。',
+                  '请完成安装与运行验证后，手动发布此草稿。',
+                ].join('\n'),
+              });
+            }
+      - name: Upload draft assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        # 重跑只替换草稿同名附件；上一步拒绝修改已经发布的版本。
+        run: gh release upload "$RELEASE_TAG" installers/*.dmg installers/*-setup.exe --clobber
