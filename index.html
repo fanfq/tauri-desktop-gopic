@@ -4,11 +4,88 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/gopic.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GoPic · 页面设计预览</title>
+    <title>GoPic</title>
+    <link rel="preload" as="image" href="/gopic.png" />
+    <!-- 内联样式先于应用脚本生效，避免冷启动暴露空白或尚未完成的布局。 -->
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #f8f9fb;
+      }
+      #startup-splash {
+        --splash-bg: #f8f9fb;
+        --splash-ink: #283244;
+        position: fixed;
+        inset: 0;
+        z-index: 2147483647;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        background: var(--splash-bg);
+        color: var(--splash-ink);
+        font:
+          600 21px -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        opacity: 1;
+        transition:
+          opacity 250ms ease-out,
+          background-color 250ms ease-out,
+          color 250ms ease-out;
+        user-select: none;
+      }
+      #startup-splash img {
+        width: 72px;
+        height: 72px;
+        object-fit: contain;
+        animation: startup-breathe 1.8s ease-in-out infinite;
+      }
+      #startup-splash.startup-splash-exit {
+        opacity: 0;
+      }
+      @keyframes startup-breathe {
+        0%,
+        100% {
+          transform: scale(1);
+          opacity: 0.8;
+        }
+        50% {
+          transform: scale(1.04);
+          opacity: 1;
+        }
+      }
+      @media (prefers-color-scheme: dark) {
+        html,
+        body {
+          background: #1b1e24;
+        }
+        #startup-splash {
+          --splash-bg: #1b1e24;
+          --splash-ink: #e4e8f0;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #startup-splash {
+          transition: none;
+        }
+        #startup-splash img {
+          animation: none;
+        }
+      }
+    </style>
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="startup-splash" role="status" aria-label="正在启动 GoPic">
+      <img src="/gopic.png" alt="" width="72" height="72" />
+      <span aria-hidden="true">GoPic</span>
+    </div>
+    <!-- 遮罩退场后恢复键盘及指针交互，防止用户操作尚未就绪的首屏。 -->
+    <div id="root" inert aria-busy="true"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

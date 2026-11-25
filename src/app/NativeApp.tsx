@@ -20,6 +20,7 @@ import { NativeUpload } from "../pages/NativeUpload";
 import { providers, type Page, type ProviderId } from "../domain/model";
 import { useNativeApp } from "../hooks/useNativeApp";
 import { native } from "../services/native";
+import { revealStartup } from "../startup-splash";
 
 const navigation = [
   { id: "upload", label: "上传", icon: CloudArrowUp },
@@ -53,6 +54,11 @@ export default function NativeApp() {
   }, [page, provider]);
   const app = useNativeApp(notify);
   const snapshot = app.snapshot;
+  const startupReady = Boolean(snapshot || app.error);
+  useEffect(() => {
+    // 成功首屏与失败重试页都能结束启动；后续刷新不重复播放。
+    if (startupReady) return revealStartup();
+  }, [startupReady]);
   if (!snapshot)
     return (
       <div className="app flex h-[100dvh] min-h-[100dvh] bg-canvas text-ink theme-system native-loading items-center justify-center p-8">
