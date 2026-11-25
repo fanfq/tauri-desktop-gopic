@@ -9,11 +9,14 @@ import {
   Plus,
   Clock,
 } from "@phosphor-icons/react";
+import { UploadResultLink } from "../components/UploadResultLink";
 import { UploadFileIcon } from "../components/UploadFileIcon";
-import { Notice, Toggle, type Notify } from "../components/UI";
+import { Notice, type Notify } from "../components/UI";
 import {
+  canClearUploadQueue,
   isProfileConfigured,
   shouldCompressFile,
+  type Compression,
   type Profile,
   type Scene,
 } from "../domain/model";
@@ -29,16 +32,10 @@ interface Task {
   profileId?: string;
   compressible?: boolean;
 }
-export interface Compression {
-  enabled: boolean;
-  threshold: number;
-  quality: number;
-}
 export function Upload({
   profile,
   scene,
   compression,
-  setCompression,
   notify,
   onConfigure,
   onUploaded,
@@ -46,12 +43,12 @@ export function Upload({
   profile?: Profile;
   scene: Scene;
   compression: Compression;
-  setCompression: (c: Compression) => void;
   notify: Notify;
   onConfigure: () => void;
   onUploaded: (file: File, src: string, profileId: string) => void;
 }) {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [examplesCleared, setExamplesCleared] = useState(false);
   const [dragging, setDragging] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const configured = isProfileConfigured(profile) && scene !== "unconfigured";
@@ -149,7 +146,17 @@ export function Upload({
             url: "",
           },
         ];
-  const shown = tasks.length ? tasks : examples;
+  // 仅倒序展示任务副本，模拟上传仍按原始顺序分配并发名额。
+  const shown = [
+    ...(tasks.length ? tasks : examplesCleared ? [] : examples),
+  ].reverse();
+  const canClear = canClearUploadQueue(shown, uploading);
+  const clearTasks = () => {
+    if (!canClear || activeBatch.current) return;
+    // 清空演示列表后不再回退到初始示例，不触碰已写入图床的记录。
+    setTasks([]);
+    setExamplesCleared(true);
+  };
   return (
     <>
       {!configured && (
@@ -162,65 +169,6 @@ export function Upload({
           </button>
         </Notice>
       )}
-      <section className="panel compression flex items-center justify-between p-[16px_19px] gap-[15px] compact:flex-wrap small-window:p-3.5">
-        <div className="ui-inline flex items-center gap-2.5">
-          <Toggle
-            label="启用图片压缩"
-            checked={compression.enabled}
-            onChange={(enabled) => setCompression({ ...compression, enabled })}
-          />
-          <div>
-            <strong>图片压缩</strong>
-            <small>
-              {compression.enabled
-                ? "仅处理符合条件的图片，其他文件保持原样"
-                : "关闭后所有文件均保持原样"}
-            </small>
-          </div>
-        </div>
-        <div className="compression-inputs flex gap-3.5 items-center compact:ml-auto small-window:ml-0">
-          <label>
-            阈值{" "}
-            <span className="unit-input flex items-center border border-solid border-line rounded-[5px] overflow-hidden bg-soft">
-              <input
-                aria-label="压缩阈值 MB"
-                type="number"
-                min="0.1"
-                step="0.1"
-                disabled={!compression.enabled}
-                value={compression.threshold}
-                onChange={(e) =>
-                  setCompression({
-                    ...compression,
-                    threshold: Math.max(0.1, Number(e.target.value)),
-                  })
-                }
-              />
-              <span>MB</span>
-            </span>
-          </label>
-          <label>
-            JPEG 质量{" "}
-            <span className="unit-input flex items-center border border-solid border-line rounded-[5px] overflow-hidden bg-soft">
-              <input
-                aria-label="JPEG 质量"
-                type="number"
-                min="1"
-                max="100"
-                disabled={!compression.enabled}
-                value={compression.quality}
-                onChange={(e) =>
-                  setCompression({
-                    ...compression,
-                    quality: Math.max(1, Math.min(100, Number(e.target.value))),
-                  })
-                }
-              />
-              <span>%</span>
-            </span>
-          </label>
-        </div>
-      </section>
       <input
         ref={input}
         type="file"
@@ -269,10 +217,22 @@ export function Upload({
               {shown.length}
             </span>
           </h2>
-          <span className="muted text-muted">
-            上传中 {shown.filter((task) => task.status === "uploading").length}{" "}
-            · 等待 {shown.filter((task) => task.status === "queued").length}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="muted text-muted">
+              上传中{" "}
+              {shown.filter((task) => task.status === "uploading").length} ·
+              等待 {shown.filter((task) => task.status === "queued").length}
+            </span>
+            <button
+              type="button"
+              className="text-button"
+              aria-label="清空上传队列"
+              disabled={!canClear}
+              onClick={clearTasks}
+            >
+              清空
+            </button>
+          </div>
         </div>
         {!shown.length ? (
           <div className="queue-empty flex justify-center items-center gap-2.5 min-h-[95px] text-muted text-[12px]">
@@ -307,7 +267,7 @@ export function Upload({
                       上传失败 · 无法连接到 Endpoint，请检查配置
                     </small>
                   ) : t.status === "done" ? (
-                    <small>{t.url}</small>
+                    <UploadResultLink url={t.url} />
                   ) : t.status === "queued" ? (
                     <small>等待上传</small>
                   ) : (

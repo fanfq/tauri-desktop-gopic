@@ -61,6 +61,7 @@ pub async fn upload_file(
     let url = if profile.provider == "qiniu" {
         qiniu::upload(&client, profile, &prepared, &key, progress.clone()).await?
     } else {
+        // 缤纷云 S4 兼容 S3：复用 SigV4、流式 PUT 及分片失败清理。
         s3::upload(&client, profile, &prepared, &key, progress.clone()).await?
     };
     progress(prepared.size_bytes, prepared.size_bytes);
@@ -79,7 +80,7 @@ fn validate(profile: &Profile) -> Result<(), String> {
     if !profile.enabled {
         return Err("云服务配置未启用".into());
     }
-    if !["r2", "s3", "qiniu", "cos", "oss"].contains(&profile.provider.as_str()) {
+    if !["r2", "s3", "qiniu", "cos", "oss", "bitiful"].contains(&profile.provider.as_str()) {
         return Err("不支持的云服务类型".into());
     }
     if [
@@ -95,7 +96,7 @@ fn validate(profile: &Profile) -> Result<(), String> {
     }
     naming::endpoint(&profile.endpoint)?;
     if profile.provider == "qiniu" && profile.domain.trim().is_empty() {
-        return Err("七牛云需要填写公网 URL 前缀".into());
+        return Err("Kodo 需要填写公网 URL 前缀".into());
     }
     if !profile.domain.trim().is_empty() {
         naming::endpoint(&profile.domain)?;

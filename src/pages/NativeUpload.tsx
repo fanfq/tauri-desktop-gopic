@@ -8,36 +8,35 @@ import {
   File,
   Clock,
 } from "@phosphor-icons/react";
-import type { AppSettings, UploadTask, Profile } from "../domain/model";
-import { isProfileConfigured } from "../domain/model";
-import { CompressionPanel } from "../components/CompressionPanel";
+import type { UploadTask, Profile } from "../domain/model";
+import { canClearUploadQueue, isProfileConfigured } from "../domain/model";
+import { UploadResultLink } from "../components/UploadResultLink";
 import { UploadFileIcon } from "../components/UploadFileIcon";
 import { Notice, type Notify } from "../components/UI";
 import { native } from "../services/native";
 
 export function NativeUpload({
-  settings,
   profile,
   tasks,
   dragging,
   uploading,
   onUpload,
-  onSave,
   onConfigure,
+  onClear,
   notify,
   onError,
 }: {
-  settings: AppSettings;
   profile?: Profile;
   tasks: UploadTask[];
   dragging: boolean;
   uploading: boolean;
   onUpload: (paths: string[]) => Promise<void>;
-  onSave: (patch: Partial<AppSettings>) => Promise<unknown>;
   onConfigure: () => void;
+  onClear: () => void;
   notify: Notify;
   onError: (error: unknown) => void;
 }) {
+  const canClear = canClearUploadQueue(tasks, uploading);
   const pick = () => {
     void native.pickFiles().then(onUpload).catch(onError);
   };
@@ -53,11 +52,6 @@ export function NativeUpload({
           </button>
         </Notice>
       )}
-      <CompressionPanel
-        value={settings.compression}
-        onSave={(compression) => onSave({ compression })}
-        onError={onError}
-      />
       <button
         className={`dropzone ${dragging ? "dragging" : ""}`}
         onClick={pick}
@@ -86,10 +80,23 @@ export function NativeUpload({
               {tasks.length}
             </span>
           </h2>
-          <span className="muted text-muted">
-            上传中 {tasks.filter((t) => t.status === "uploading").length} · 等待{" "}
-            {tasks.filter((t) => t.status === "queued").length}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="muted text-muted">
+              上传中 {tasks.filter((t) => t.status === "uploading").length} ·
+              等待 {tasks.filter((t) => t.status === "queued").length}
+            </span>
+            <button
+              type="button"
+              className="text-button"
+              aria-label="清空上传队列"
+              disabled={!canClear}
+              onClick={() => {
+                if (canClear) onClear();
+              }}
+            >
+              清空
+            </button>
+          </div>
         </div>
         {!tasks.length ? (
           <div className="queue-empty flex justify-center items-center gap-2.5 min-h-[95px] text-muted text-[12px]">
@@ -98,7 +105,8 @@ export function NativeUpload({
           </div>
         ) : (
           <div className="panel task-list mt-[13px]">
-            {tasks.map((task) => (
+            {/* 只反转展示副本，进度事件和上传调度仍保留原始添加顺序。 */}
+            {[...tasks].reverse().map((task) => (
               <div
                 className="task flex items-center gap-3 p-[15px_17px] min-h-[76px] narrow:p-[13px_12px] narrow:gap-[9px]"
                 key={task.taskId}
@@ -116,7 +124,16 @@ export function NativeUpload({
                       {task.error || "上传失败"}
                     </small>
                   ) : task.status === "done" ? (
-                    <small>上传完成，已保存本地缓存</small>
+                    task.url ? (
+                      <UploadResultLink
+                        url={task.url}
+                        onOpen={(url) => {
+                          void native.openUrl(url).catch(onError);
+                        }}
+                      />
+                    ) : (
+                      <small>上传完成，链接不可用</small>
+                    )
                   ) : task.status === "queued" ? (
                     <small>等待上传</small>
                   ) : (

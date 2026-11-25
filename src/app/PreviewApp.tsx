@@ -1,3 +1,4 @@
+import { CloudProviderCount } from "../components/CloudProviderCount";
 import { Select } from "../components/Select";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -19,7 +20,7 @@ import {
   WarningCircle,
 } from "@phosphor-icons/react";
 import { Modal, type Notify } from "../components/UI";
-import { Upload, type Compression } from "../pages/Upload";
+import { Upload } from "../pages/Upload";
 import { Gallery } from "../pages/Gallery";
 import { CloudPage } from "../pages/Cloud";
 import { Settings } from "../pages/Settings";
@@ -28,6 +29,7 @@ import {
   initialFiles,
   providers,
   namingPatterns,
+  type Compression,
   type FileRecord,
   type Page,
   type ProviderId,
@@ -152,9 +154,12 @@ export default function PreviewApp() {
                       onClick={() => setProvider(p.id)}
                     >
                       <span
-                        className={`provider-bullet w-[5px] h-[5px] rounded-full bg-current provider-${p.id}`}
+                        className={`provider-bullet w-[5px] h-[5px] shrink-0 rounded-full bg-current provider-${p.id}`}
                       />
-                      {p.name}
+                      <span className="min-w-0 truncate" title={p.name}>
+                        {p.name}
+                      </span>
+                      <CloudProviderCount provider={p.id} profiles={profiles} />
                     </button>
                   ))}
                 </div>
@@ -234,7 +239,7 @@ export default function PreviewApp() {
         </div>
         <main
           ref={mainRef}
-          className={`page-content flex-1 overflow-auto p-[26px_30px_18px] wide:pt-8 compact:p-[23px_24px] narrow:p-5 small-window:py-4 small-window:px-3.5 page-${page}`}
+          className={`page-content min-h-0 flex-1 ${page === "gallery" ? "flex flex-col overflow-hidden" : "overflow-auto"} p-[26px_30px_18px] wide:pt-8 compact:p-[23px_24px] narrow:p-5 small-window:py-4 small-window:px-3.5 page-${page}`}
           key={resetKey}
         >
           {/* 保持任务组件挂载，切页不会中断预览任务。 */}
@@ -243,7 +248,6 @@ export default function PreviewApp() {
               profile={active}
               scene={scene}
               compression={compression}
-              setCompression={setCompression}
               notify={notify}
               onConfigure={() => setPage("cloud")}
               onUploaded={uploaded}
@@ -269,6 +273,8 @@ export default function PreviewApp() {
           )}
           {page === "settings" && (
             <Settings
+              compression={compression}
+              setCompression={setCompression}
               theme={theme}
               setTheme={setTheme}
               scene={scene}

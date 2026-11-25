@@ -26,6 +26,47 @@
   .page-content > * {
     @apply max-w-[1180px] ml-auto mr-auto;
   }
+  /* 图床滚动容器延伸到内容区右边缘，留白由内部内容承担。 */
+  .page-content.page-gallery {
+    --gallery-gutter: 30px;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .page-gallery > .gallery-layout {
+    max-width: none;
+  }
+  .page-gallery .gallery-toolbar,
+  .page-gallery .batch-bar {
+    width: calc(100% - 2 * var(--gallery-gutter));
+    max-width: 1180px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .page-gallery .gallery-scroll {
+    padding-left: var(--gallery-gutter);
+    padding-right: var(--gallery-gutter);
+  }
+  .page-gallery .gallery-grid,
+  .page-gallery .page-footnote {
+    max-width: 1180px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  @screen compact {
+    .page-content.page-gallery {
+      --gallery-gutter: 24px;
+    }
+  }
+  @screen narrow {
+    .page-content.page-gallery {
+      --gallery-gutter: 20px;
+    }
+  }
+  @screen small-window {
+    .page-content.page-gallery {
+      --gallery-gutter: 14px;
+    }
+  }
   .compression strong {
     @apply text-[12px];
   }

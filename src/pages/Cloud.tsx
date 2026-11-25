@@ -72,8 +72,8 @@ export function CloudPage({
       access: "",
       secret: "",
       bucket: "",
-      endpoint: "",
-      region: provider === "r2" ? "auto" : "",
+      endpoint: info.defaultEndpoint ?? "",
+      region: info.defaultRegion ?? (provider === "r2" ? "auto" : ""),
       domain: "",
       prefix: "",
       pathStyle: true,
@@ -184,13 +184,8 @@ export function CloudPage({
               </div>
               <div className="form-fields p-[23px_22px] grid gap-[15px] compact:p-[18px_16px] narrow:gap-[13px]">
                 {field("name", "配置名称", "例如：个人图床")}
-                {provider !== "qiniu" &&
-                  field(
-                    "account",
-                    "Account / App ID",
-                    "用于记录账号信息",
-                    true,
-                  )}
+                {/* 各厂商统一保留可选账号备注，Kodo 也可记录 Account / App ID。 */}
+                {field("account", "Account / App ID", "用于记录账号信息", true)}
                 <div className="form-divider text-[10px] text-muted pt-[9px] pb-[3px] border-t border-solid border-t-line mt-1.5">
                   访问凭证
                 </div>
@@ -228,13 +223,14 @@ export function CloudPage({
                   provider === "qiniu" ? "上传域名" : "Endpoint",
                   provider === "qiniu"
                     ? "https://up-z0.qiniup.com"
-                    : "https://example.endpoint.com",
+                    : (info.defaultEndpoint ?? "https://example.endpoint.com"),
                 )}
                 {provider !== "qiniu" &&
                   field(
                     "region",
                     "Region",
-                    provider === "r2" ? "auto" : "us-east-1",
+                    info.defaultRegion ??
+                      (provider === "r2" ? "auto" : "us-east-1"),
                   )}
                 {field(
                   "domain",

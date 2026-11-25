@@ -34,6 +34,8 @@ export const native = {
   setStartup: (enabled: boolean) =>
     invoke<void>("set_launch_at_login", { enabled }),
   copy: writeText,
+  /** 使用系统默认浏览器打开上传结果，不在应用 WebView 内导航。 */
+  openUrl,
   about: () => openUrl("https://github.com/fanfq/tauri-desktop-gopic"),
   async pickFiles() {
     return (

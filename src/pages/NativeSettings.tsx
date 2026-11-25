@@ -1,3 +1,4 @@
+import { CompressionPanel } from "../components/CompressionPanel";
 import { Select } from "../components/Select";
 import { useState } from "react";
 import {
@@ -6,6 +7,7 @@ import {
   Moon,
   Monitor,
   TextAa,
+  Image,
   HardDrives,
   ArrowSquareOut,
   DownloadSimple,
@@ -170,6 +172,18 @@ export function NativeSettings({
             </p>
           )}
         </div>
+      </section>
+      {/* 编辑全局上传压缩设置；上传页与托盘继续读取同一份已保存配置。 */}
+      <section>
+        <h2 className="settings-section-title flex gap-2 items-center text-[12px] m-[0_0_11px_2px]">
+          <Image size={17} />
+          图片压缩
+        </h2>
+        <CompressionPanel
+          value={settings.compression}
+          onSave={(compression) => onSave({ compression })}
+          onError={onError}
+        />
       </section>
       <section>
         <h2 className="settings-section-title flex gap-2 items-center text-[12px] m-[0_0_11px_2px]">

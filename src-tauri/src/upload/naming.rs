@@ -91,7 +91,7 @@ pub fn public_url(profile: &Profile, key: &str, fallback: Option<&Url>) -> Resul
     }
     fallback
         .map(ToString::to_string)
-        .ok_or_else(|| "七牛云必须填写公网 URL 前缀".into())
+        .ok_or_else(|| "Kodo 必须填写公网 URL 前缀".into())
 }
 
 /// AWS percent-encoding (RFC 3986), without the form-urlencoded '+' shorthand.

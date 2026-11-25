@@ -86,11 +86,12 @@ fn import_uses_new_ids_and_invalid_document_changes_nothing() {
     let dir = tempfile::tempdir().unwrap();
     let store = Store::open(dir.path().to_path_buf()).unwrap();
     let original = store.data().unwrap().settings.profiles[0].id.clone();
+    let original_count = store.data().unwrap().settings.profiles.len();
     let export = store.export_document().unwrap();
     let added = store.import_document(&export).unwrap();
-    assert_eq!(added.added, 5);
+    assert_eq!(added.added, original_count);
     let data = store.data().unwrap();
-    assert_eq!(data.settings.profiles.len(), 10);
+    assert_eq!(data.settings.profiles.len(), original_count * 2);
     assert_eq!(
         data.settings
             .profiles
@@ -104,7 +105,10 @@ fn import_uses_new_ids_and_invalid_document_changes_nothing() {
             .import_document(r#"{"version":999,"cloud":{}}"#)
             .is_err()
     );
-    assert_eq!(store.data().unwrap().settings.profiles.len(), 10);
+    assert_eq!(
+        store.data().unwrap().settings.profiles.len(),
+        original_count * 2
+    );
 }
 
 #[test]
@@ -122,6 +126,7 @@ fn disk_write_failure_preserves_in_memory_settings() {
 fn malformed_import_compression_or_active_reference_is_atomic() {
     let dir = tempfile::tempdir().unwrap();
     let store = Store::open(dir.path().to_path_buf()).unwrap();
+    let original_count = store.data().unwrap().settings.profiles.len();
     for (field, value) in [
         (
             "compression",
@@ -134,7 +139,10 @@ fn malformed_import_compression_or_active_reference_is_atomic() {
             serde_json::from_str(&store.export_document().unwrap()).unwrap();
         export["cloud"][field] = value;
         assert!(store.import_document(&export.to_string()).is_err());
-        assert_eq!(store.data().unwrap().settings.profiles.len(), 5);
+        assert_eq!(
+            store.data().unwrap().settings.profiles.len(),
+            original_count
+        );
     }
 }
 
@@ -198,4 +206,84 @@ fn local_commit_failure_reports_cloud_success_and_removes_pending_files() {
     assert!(error.contains("云端上传已成功"));
     assert!(store.data().unwrap().files.is_empty());
     assert_eq!(store.cache_summary().unwrap().file_count, 0);
+}
+
+#[test]
+fn bitiful_defaults_persist_and_export_import_keeps_provider_and_fields() {
+    let dir = tempfile::tempdir().unwrap();
+    let store = Store::open(dir.path().to_path_buf()).unwrap();
+    let mut settings = store.data().unwrap().settings;
+    let p = settings
+        .profiles
+        .iter_mut()
+        .find(|p| p.provider == "bitiful")
+        .expect("缤纷云应有独立默认配置");
+    assert_eq!(p.endpoint, "https://s3.bitiful.net");
+    assert_eq!(p.region, "cn-east-1");
+    assert!(!p.enabled);
+    assert!(p.access.is_empty() && p.secret.is_empty());
+    p.access = "test-access".into();
+    p.secret = "test-secret".into();
+    p.bucket = "photos".into();
+    p.domain = "https://cdn.example.com".into();
+    p.prefix = "images/".into();
+    p.path_style = false;
+    p.enabled = true;
+    p.validate_upload().unwrap();
+    settings.active_profile_id = Some(p.id.clone());
+    store.save_settings(settings).unwrap();
+    drop(store);
+    let store = Store::open(dir.path().to_path_buf()).unwrap();
+    let export = store.export_document().unwrap();
+    let mut value: serde_json::Value = serde_json::from_str(&export).unwrap();
+    let exported = value["cloud"]["profiles"]
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|p| p["provider"] == "bitifulS4")
+        .expect("导出必须保留缤纷云身份");
+    let original_id = exported["id"].as_str().unwrap().to_string();
+    // 同时接受导出格式与内部 ID；导入始终分配新 ID，不改默认选择。
+    for provider in ["bitifulS4", "bitiful"] {
+        let mut single = serde_json::from_str::<serde_json::Value>(&export).unwrap();
+        let mut profile = exported.clone();
+        profile["provider"] = provider.into();
+        single["cloud"]["profiles"] = serde_json::json!([profile]);
+        single["cloud"]["activeProfileId"] = original_id.clone().into();
+        assert_eq!(store.import_document(&single.to_string()).unwrap().added, 1);
+        let state = store.data().unwrap();
+        let imported = state.settings.profiles.last().unwrap();
+        assert_ne!(imported.id, original_id);
+        assert_eq!(imported.provider, "bitiful");
+        assert_eq!(imported.region, "cn-east-1");
+        assert_eq!(imported.endpoint, "https://s3.bitiful.net");
+        assert_eq!(imported.domain, "https://cdn.example.com");
+        assert_eq!(imported.prefix, "images/");
+        assert_eq!(imported.access, "test-access");
+        assert_eq!(imported.secret, "test-secret");
+        assert!(!imported.path_style);
+        assert!(imported.enabled);
+        assert_eq!(
+            state.settings.active_profile_id.as_deref(),
+            Some(original_id.as_str())
+        );
+    }
+}
+
+#[test]
+fn kodo_defaults_and_validation_use_product_name() {
+    let settings = Settings::default();
+    let p = settings
+        .profiles
+        .iter()
+        .find(|p| p.provider == "qiniu")
+        .unwrap();
+    assert_eq!(p.name, "Kodo 默认配置");
+    let mut p = p.clone();
+    p.enabled = true;
+    p.access = "access".into();
+    p.secret = "secret".into();
+    p.bucket = "bucket".into();
+    p.endpoint = "https://up-z0.qiniup.com".into();
+    assert!(p.validate_upload().unwrap_err().contains("Kodo"));
 }

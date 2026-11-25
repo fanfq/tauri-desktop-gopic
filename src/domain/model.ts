@@ -1,8 +1,8 @@
 import { classifyFile, fileExtension } from "./file-type.ts";
 export { fileExtension } from "./file-type.ts";
 
-/** 预览数据与真实配置隔离。后续用 Tauri 服务替换数据源，不改变页面职责。 */
-export type ProviderId = "r2" | "s3" | "qiniu" | "cos" | "oss";
+/** 正式界面与预览共用厂商定义；真实配置和演示凭证分别保存。 */
+export type ProviderId = "r2" | "s3" | "qiniu" | "cos" | "oss" | "bitiful";
 export type Page = "upload" | "gallery" | "cloud" | "settings";
 export type Scene = "normal" | "empty" | "unconfigured" | "error";
 export const providers: {
@@ -10,6 +10,9 @@ export const providers: {
   name: string;
   short: string;
   hint: string;
+  /** 厂商固定的初始连接参数，仅用于新建配置，不覆盖用户编辑值。 */
+  defaultEndpoint?: string;
+  defaultRegion?: string;
 }[] = [
   {
     id: "r2",
@@ -25,8 +28,8 @@ export const providers: {
   },
   {
     id: "qiniu",
-    name: "七牛云",
-    short: "七牛",
+    name: "七牛云 Kodo",
+    short: "Kodo",
     hint: "上传域名应与空间区域一致，公网 URL 前缀为必填项。",
   },
   {
@@ -40,6 +43,14 @@ export const providers: {
     name: "阿里云 OSS",
     short: "OSS",
     hint: "使用 S3 兼容 Endpoint；真实云端兼容性将在功能接入阶段验证。",
+  },
+  {
+    id: "bitiful",
+    name: "缤纷云 S4",
+    short: "S4",
+    hint: "使用子账户 AccessKey / SecretKey，并先授权到目标 Bucket 或目录。默认 Region 为 cn-east-1，支持 S3 兼容上传。",
+    defaultEndpoint: "https://s3.bitiful.net",
+    defaultRegion: "cn-east-1",
   },
 ];
 export interface Profile {
@@ -57,6 +68,18 @@ export interface Profile {
   prefix: string;
   pathStyle: boolean;
 }
+/** 按厂商统计启用数和总数；直接使用当前配置，新增/删除/切换后无需额外同步。 */
+export function cloudProviderCounts(
+  profiles: readonly Pick<Profile, "provider" | "enabled">[],
+  provider: ProviderId,
+): { enabled: number; total: number } {
+  const own = profiles.filter((profile) => profile.provider === provider);
+  return {
+    enabled: own.filter((profile) => profile.enabled).length,
+    total: own.length,
+  };
+}
+
 export interface FileRecord {
   id: string;
   profileId: string;
@@ -163,6 +186,18 @@ export interface Snapshot {
   launchAtLogin: boolean;
   version: string;
 }
+/** 仅空闲且所有任务已结束时允许清空，避免移除仍在接收进度的任务。 */
+export function canClearUploadQueue(
+  tasks: readonly { status: "queued" | "uploading" | "done" | "error" }[],
+  uploading: boolean,
+): boolean {
+  return (
+    tasks.length > 0 &&
+    !uploading &&
+    tasks.every((task) => task.status === "done" || task.status === "error")
+  );
+}
+
 export interface UploadTask {
   taskId: string;
   name: string;

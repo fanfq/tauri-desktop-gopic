@@ -305,7 +305,19 @@ impl Store {
     }
     pub fn export_document(&self) -> Result<String, String> {
         let settings = self.data()?.settings;
-        let profiles: Vec<Value> = settings.profiles.iter().map(|p| json!({"id":p.id,"provider": match p.provider.as_str() {"r2"=>"cloudflareR2","s3"=>"awsS3","qiniu"=>"qiniu","cos"=>"tencentCos",_=>"aliyunOss"},"name":p.name,"isEnabled":p.enabled,"accountId":p.account,"accessKeyId":p.access,"secretAccessKey":p.secret,"bucket":p.bucket,"endpoint":p.endpoint,"region":p.region,"publicDomain":p.domain,"pathPrefix":p.prefix,"usePathStyle":p.path_style})).collect();
+        let profiles: Vec<Value> = settings.profiles.iter().map(|p| {
+            // 外部配置使用稳定的厂商标识，避免新增厂商落入 OSS 的默认分支。
+            let provider = match p.provider.as_str() {
+                "r2" => "cloudflareR2",
+                "s3" => "awsS3",
+                "qiniu" => "qiniu",
+                "cos" => "tencentCos",
+                "oss" => "aliyunOss",
+                "bitiful" => "bitifulS4",
+                other => other,
+            };
+            json!({"id":p.id,"provider":provider,"name":p.name,"isEnabled":p.enabled,"accountId":p.account,"accessKeyId":p.access,"secretAccessKey":p.secret,"bucket":p.bucket,"endpoint":p.endpoint,"region":p.region,"publicDomain":p.domain,"pathPrefix":p.prefix,"usePathStyle":p.path_style})
+        }).collect();
         let pattern = match settings.naming.as_str() {
             "保持原文件名" => "originalFileName",
             "{YYYYMMDD}/{HASH}_{FILENAME}" => "datedHashFileName",
@@ -389,6 +401,7 @@ impl Store {
                 "qiniu" => "qiniu",
                 "tencentCos" | "cos" => "cos",
                 "aliyunOss" | "oss" => "oss",
+                "bitifulS4" | "bitiful" => "bitiful",
                 _ => return Err("未知云服务厂商".into()),
             };
             imported.push(Profile {

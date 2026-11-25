@@ -10,12 +10,13 @@ export const initialProfiles: Profile[] = providers.map((p) => ({
   secret: "demo-secret-not-a-real-key",
   bucket: "gopic-images",
   endpoint:
-    p.id === "qiniu"
+    p.defaultEndpoint ??
+    (p.id === "qiniu"
       ? "https://up-z0.qiniup.com"
       : p.id === "r2"
         ? "https://demo.r2.cloudflarestorage.com"
-        : "https://s3.example.com",
-  region: p.id === "r2" ? "auto" : "us-east-1",
+        : "https://s3.example.com"),
+  region: p.defaultRegion ?? (p.id === "r2" ? "auto" : "us-east-1"),
   domain: "https://cdn.example.com",
   prefix: "images/",
   pathStyle: true,

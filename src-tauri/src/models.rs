@@ -31,7 +31,7 @@ impl Profile {
             return Err("云配置不完整，请填写密钥、Bucket 和 Endpoint".into());
         }
         if self.provider == "qiniu" && self.domain.trim().is_empty() {
-            return Err("七牛云必须填写公网 URL 前缀".into());
+            return Err("Kodo 必须填写公网 URL 前缀".into());
         }
         for address in [&self.endpoint, &self.domain] {
             if address.is_empty() {
@@ -80,9 +80,10 @@ impl Default for Settings {
         let profiles = [
             ("r2", "R2 默认配置"),
             ("s3", "S3 默认配置"),
-            ("qiniu", "七牛 默认配置"),
+            ("qiniu", "Kodo 默认配置"),
             ("cos", "COS 默认配置"),
             ("oss", "OSS 默认配置"),
+            ("bitiful", "S4 默认配置"),
         ]
         .into_iter()
         .map(|(provider, name)| Profile {
@@ -94,11 +95,16 @@ impl Default for Settings {
             access: String::new(),
             secret: String::new(),
             bucket: String::new(),
-            endpoint: String::new(),
-            region: if provider == "r2" {
-                "auto".into()
+            // S4 的官方连接参数只在初始化时预填，读取已有配置时保留用户设置。
+            endpoint: if provider == "bitiful" {
+                "https://s3.bitiful.net".into()
             } else {
                 String::new()
+            },
+            region: match provider {
+                "r2" => "auto".into(),
+                "bitiful" => "cn-east-1".into(),
+                _ => String::new(),
             },
             domain: String::new(),
             prefix: String::new(),
@@ -141,7 +147,8 @@ impl Settings {
             if profile.id.is_empty()
                 || !ids.insert(&profile.id)
                 || profile.name.trim().is_empty()
-                || !["r2", "s3", "qiniu", "cos", "oss"].contains(&profile.provider.as_str())
+                || !["r2", "s3", "qiniu", "cos", "oss", "bitiful"]
+                    .contains(&profile.provider.as_str())
             {
                 return Err("云配置 ID、名称或厂商无效".into());
             }

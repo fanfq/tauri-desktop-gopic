@@ -1,3 +1,4 @@
+import { CloudProviderCount } from "../components/CloudProviderCount";
 import { Select } from "../components/Select";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -124,9 +125,15 @@ export default function NativeApp() {
                       onClick={() => setProvider(p.id)}
                     >
                       <span
-                        className={`provider-bullet w-[5px] h-[5px] rounded-full bg-current provider-${p.id}`}
+                        className={`provider-bullet w-[5px] h-[5px] shrink-0 rounded-full bg-current provider-${p.id}`}
                       />
-                      {p.name}
+                      <span className="min-w-0 truncate" title={p.name}>
+                        {p.name}
+                      </span>
+                      <CloudProviderCount
+                        provider={p.id}
+                        profiles={settings.profiles}
+                      />
                     </button>
                   ))}
                 </div>
@@ -183,17 +190,16 @@ export default function NativeApp() {
         </header>
         <main
           ref={main}
-          className={`page-content flex-1 overflow-auto p-[26px_30px_18px] wide:pt-8 compact:p-[23px_24px] narrow:p-5 small-window:py-4 small-window:px-3.5 page-${page}`}
+          className={`page-content min-h-0 flex-1 ${page === "gallery" ? "flex flex-col overflow-hidden" : "overflow-auto"} p-[26px_30px_18px] wide:pt-8 compact:p-[23px_24px] narrow:p-5 small-window:py-4 small-window:px-3.5 page-${page}`}
         >
           {page === "upload" && (
             <NativeUpload
-              settings={settings}
               profile={active}
               tasks={app.tasks}
+              onClear={app.clearTasks}
               dragging={app.dragging}
               uploading={app.uploading}
               onUpload={app.upload}
-              onSave={app.savePatch}
               onConfigure={() => setPage("cloud")}
               notify={notify}
               onError={app.report}

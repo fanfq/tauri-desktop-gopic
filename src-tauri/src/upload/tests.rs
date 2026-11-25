@@ -187,42 +187,44 @@ async fn server<S: AsRef<str> + Send + 'static>(
 
 #[tokio::test]
 async fn small_s3_put_streams_any_file_and_emits_progress() {
-    let (endpoint, seen, server) = server(vec![
-        "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
-    ])
-    .await;
-    let file = tempfile::Builder::new()
-        .prefix("document")
-        .suffix(".pdf")
-        .tempfile()
+    for provider in ["s3", "bitiful"] {
+        let (endpoint, seen, server) = server(vec![
+            "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+        ])
+        .await;
+        let file = tempfile::Builder::new()
+            .prefix("document")
+            .suffix(".pdf")
+            .tempfile()
+            .unwrap();
+        std::fs::write(file.path(), b"pdf-content").unwrap();
+        let progress = Arc::new(Mutex::new(Vec::new()));
+        let sink = progress.clone();
+        let result = upload_file(
+            &profile(&endpoint, provider),
+            &Compression {
+                enabled: false,
+                threshold: 1.0,
+                quality: 70,
+            },
+            "保持原文件名",
+            file.path(),
+            move |n, total| sink.lock().unwrap().push((n, total)),
+        )
+        .await
         .unwrap();
-    std::fs::write(file.path(), b"pdf-content").unwrap();
-    let progress = Arc::new(Mutex::new(Vec::new()));
-    let sink = progress.clone();
-    let result = upload_file(
-        &profile(&endpoint, "s3"),
-        &Compression {
-            enabled: false,
-            threshold: 1.0,
-            quality: 70,
-        },
-        "保持原文件名",
-        file.path(),
-        move |n, total| sink.lock().unwrap().push((n, total)),
-    )
-    .await
-    .unwrap();
-    server.await.unwrap();
-    assert_eq!(result.size_bytes, 11);
-    assert_eq!(progress.lock().unwrap().last(), Some(&(11, 11)));
-    let requests = seen.lock().unwrap();
-    assert!(requests[0].starts_with("PUT /bucket/files/"));
-    assert!(requests[0].ends_with("pdf-content"));
-    assert!(
-        requests[0]
-            .to_lowercase()
-            .contains("authorization: aws4-hmac-sha256")
-    );
+        server.await.unwrap();
+        assert_eq!(result.size_bytes, 11);
+        assert_eq!(progress.lock().unwrap().last(), Some(&(11, 11)));
+        let requests = seen.lock().unwrap();
+        assert!(requests[0].starts_with("PUT /bucket/files/"));
+        assert!(requests[0].ends_with("pdf-content"));
+        assert!(
+            requests[0]
+                .to_lowercase()
+                .contains("authorization: aws4-hmac-sha256")
+        );
+    }
 }
 
 #[tokio::test]
@@ -287,42 +289,44 @@ pub(super) fn response(status: &str, body: &str, headers: &str) -> String {
 
 #[tokio::test]
 async fn s3_multipart_orders_parts_and_confirms_the_merge_body() {
-    let created = "<InitiateMultipartUploadResult><UploadId>id=&amp;test</UploadId></InitiateMultipartUploadResult>";
-    let (endpoint, seen, service) = server(vec![
-        response("200 OK", created, ""),
-        response("200 OK", "", "ETag: \"part-a\"\r\n"),
-        response("200 OK", "", "ETag: \"part-b\"\r\n"),
-        response("200 OK", "", "ETag: \"part-c\"\r\n"),
-        response(
-            "200 OK",
-            "<CompleteMultipartUploadResult><Key>test</Key></CompleteMultipartUploadResult>",
-            "",
-        ),
-    ])
-    .await;
-    let file = tempfile::Builder::new().suffix(".zip").tempfile().unwrap();
-    file.as_file().set_len(10 * 1024 * 1024 + 1).unwrap();
-    let result = upload_file(
-        &profile(&endpoint, "s3"),
-        &Compression {
-            enabled: false,
-            threshold: 1.0,
-            quality: 70,
-        },
-        "保持原文件名",
-        file.path(),
-        |_, _| {},
-    )
-    .await;
-    service.await.unwrap();
-    assert!(result.is_ok());
-    let requests = seen.lock().unwrap();
-    assert!(requests[0].starts_with("POST /bucket/files/"));
-    assert!(requests[0].contains("?uploads="));
-    assert!(requests[4].contains("?uploadId=id%3D%26test"));
-    let complete = &requests[4];
-    assert!(complete.contains("<PartNumber>1</PartNumber>"));
-    assert!(complete.find("<PartNumber>1").unwrap() < complete.find("<PartNumber>3").unwrap());
+    for provider in ["s3", "bitiful"] {
+        let created = "<InitiateMultipartUploadResult><UploadId>id=&amp;test</UploadId></InitiateMultipartUploadResult>";
+        let (endpoint, seen, service) = server(vec![
+            response("200 OK", created, ""),
+            response("200 OK", "", "ETag: \"part-a\"\r\n"),
+            response("200 OK", "", "ETag: \"part-b\"\r\n"),
+            response("200 OK", "", "ETag: \"part-c\"\r\n"),
+            response(
+                "200 OK",
+                "<CompleteMultipartUploadResult><Key>test</Key></CompleteMultipartUploadResult>",
+                "",
+            ),
+        ])
+        .await;
+        let file = tempfile::Builder::new().suffix(".zip").tempfile().unwrap();
+        file.as_file().set_len(10 * 1024 * 1024 + 1).unwrap();
+        let result = upload_file(
+            &profile(&endpoint, provider),
+            &Compression {
+                enabled: false,
+                threshold: 1.0,
+                quality: 70,
+            },
+            "保持原文件名",
+            file.path(),
+            |_, _| {},
+        )
+        .await;
+        assert!(result.is_ok(), "{provider}: {:?}", result.err());
+        service.await.unwrap();
+        let requests = seen.lock().unwrap();
+        assert!(requests[0].starts_with("POST /bucket/files/"));
+        assert!(requests[0].contains("?uploads="));
+        assert!(requests[4].contains("?uploadId=id%3D%26test"));
+        let complete = &requests[4];
+        assert!(complete.contains("<PartNumber>1</PartNumber>"));
+        assert!(complete.find("<PartNumber>1").unwrap() < complete.find("<PartNumber>3").unwrap());
+    }
 }
 
 #[tokio::test]
@@ -490,4 +494,34 @@ async fn compresses_only_when_jpeg_is_smaller_and_caches_final_jpeg_bytes() {
         std::fs::read(prepared.source_path).unwrap(),
         std::fs::read(small.path()).unwrap()
     );
+}
+
+#[test]
+fn bitiful_validates_and_signs_both_addressing_styles_with_s3_scope() {
+    let mut p = profile("https://s3.bitiful.net", "bitiful");
+    p.region = "cn-east-1".into();
+    validate(&p).unwrap();
+    p.domain.clear();
+    for (path_style, expected) in [
+        (true, "https://s3.bitiful.net/bucket/files/a%20b.txt"),
+        (false, "https://bucket.s3.bitiful.net/files/a%20b.txt"),
+    ] {
+        p.path_style = path_style;
+        let url = naming::object_url(&p, "files/a b.txt").unwrap();
+        assert_eq!(url.as_str(), expected);
+        assert_eq!(
+            naming::public_url(&p, "files/a b.txt", Some(&url)).unwrap(),
+            expected
+        );
+        let headers =
+            signing::s3_headers(&p, "PUT", &url, 3, "text/plain", "20261125T000000Z").unwrap();
+        assert!(
+            headers["authorization"]
+                .to_str()
+                .unwrap()
+                .contains("Credential=access/20261125/cn-east-1/s3/aws4_request")
+        );
+    }
+    p.secret.clear();
+    assert!(validate(&p).is_err());
 }

@@ -104,7 +104,7 @@ pub fn qiniu_token(profile: &Profile, key: &str, deadline: i64) -> Result<String
     .map_err(|_| "无法生成上传策略")?;
     let encoded = URL_SAFE.encode(policy);
     let mut mac = Hmac::<sha1::Sha1>::new_from_slice(profile.secret.trim().as_bytes())
-        .map_err(|_| "无法初始化七牛签名")?;
+        .map_err(|_| "无法初始化 Kodo 签名")?;
     mac.update(encoded.as_bytes());
     Ok(format!(
         "{}:{}:{encoded}",

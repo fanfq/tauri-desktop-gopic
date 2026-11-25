@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AppSettings, Snapshot, UploadTask } from "../domain/model";
-import { isProfileConfigured } from "../domain/model";
+import { canClearUploadQueue, isProfileConfigured } from "../domain/model";
 import { createSnapshotStore } from "../domain/snapshot-store";
 import { native, subscribeSafely } from "../services/native";
 import type { Notify } from "../components/UI";
@@ -9,6 +9,8 @@ export function useNativeApp(notify: Notify) {
   const [snapshot, setSnapshot] = useState<Snapshot>();
   const [error, setError] = useState("");
   const [tasks, setTasks] = useState<UploadTask[]>([]);
+  // 已清空任务的迟到事件不再恢复到列表，新任务 ID 不受影响。
+  const clearedTaskIds = useRef(new Set<string>());
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [mutating, setMutating] = useState(false);
@@ -90,13 +92,14 @@ export function useNativeApp(notify: Notify) {
       () =>
         // 首次 queued 事件按输入顺序追加；旧事件缺省缩略图时保留已有预览。
         native.onProgress((task) =>
-          setTasks((all) =>
-            all.some((t) => t.taskId === task.taskId)
+          setTasks((all) => {
+            if (clearedTaskIds.current.has(task.taskId)) return all;
+            return all.some((t) => t.taskId === task.taskId)
               ? all.map((t) =>
                   t.taskId === task.taskId ? { ...t, ...task } : t,
                 )
-              : [...all, task],
-          ),
+              : [...all, task];
+          }),
         ),
       (e) => reportRef.current(e),
     );
@@ -126,6 +129,15 @@ export function useNativeApp(notify: Notify) {
       stopDesktopError();
     };
   }, [refresh]);
+  const clearTasks = useCallback(() => {
+    // 再次检查实时批次状态，防止按钮点击与开始上传发生在同一轮渲染。
+    if (activeBatch.current) return;
+    setTasks((all) => {
+      if (!canClearUploadQueue(all, false)) return all;
+      all.forEach((task) => clearedTaskIds.current.add(task.taskId));
+      return [];
+    });
+  }, []);
   const savePatch = useCallback(
     (patch: Partial<AppSettings>) => store.current.savePatch(patch),
     [],
@@ -144,6 +156,7 @@ export function useNativeApp(notify: Notify) {
     snapshot,
     error,
     tasks,
+    clearTasks,
     dragging,
     uploading,
     mutating,

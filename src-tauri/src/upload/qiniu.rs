@@ -54,15 +54,15 @@ pub(super) async fn upload(
                         .send()
                         .await
                         .map_err(network_error)?;
-                    let body = response_text(checked(response, "七牛分块上传").await?).await?;
+                    let body = response_text(checked(response, "Kodo 分块上传").await?).await?;
                     let json: serde_json::Value =
-                        serde_json::from_str(&body).map_err(|_| "七牛分块响应格式无效")?;
+                        serde_json::from_str(&body).map_err(|_| "Kodo 分块响应格式无效")?;
                     let ctx = json
                         .get("ctx")
                         .and_then(|v| v.as_str())
                         .filter(|s| !s.is_empty())
                         .map(str::to_string)
-                        .ok_or_else(|| "七牛分块响应缺少 ctx".to_string())?;
+                        .ok_or_else(|| "Kodo 分块响应缺少 ctx".to_string())?;
                     Ok::<_, String>((start, ctx))
                 });
                 offset += length;
@@ -103,11 +103,11 @@ pub(super) async fn upload(
             .send()
             .await
             .map_err(network_error)?;
-        let body = response_text(checked(response, "七牛合并分块").await?).await?;
+        let body = response_text(checked(response, "Kodo 合并分块").await?).await?;
         let json: serde_json::Value =
-            serde_json::from_str(&body).map_err(|_| "七牛合并响应格式无效")?;
+            serde_json::from_str(&body).map_err(|_| "Kodo 合并响应格式无效")?;
         if !json.is_object() || json.get("error").is_some() {
-            return Err("七牛合并分块失败".into());
+            return Err("Kodo 合并分块失败".into());
         }
     } else {
         let body = streaming_body(&file.source_path, file.size_bytes, progress).await?;
@@ -125,11 +125,11 @@ pub(super) async fn upload(
             .send()
             .await
             .map_err(network_error)?;
-        let body = response_text(checked(response, "七牛上传").await?).await?;
+        let body = response_text(checked(response, "Kodo 上传").await?).await?;
         let json: serde_json::Value =
-            serde_json::from_str(&body).map_err(|_| "七牛上传响应格式无效")?;
+            serde_json::from_str(&body).map_err(|_| "Kodo 上传响应格式无效")?;
         if !json.is_object() || json.get("error").is_some() {
-            return Err("七牛上传失败".into());
+            return Err("Kodo 上传失败".into());
         }
     }
     naming::public_url(profile, key, None)
